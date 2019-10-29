@@ -5,6 +5,9 @@ import Enrollment from '../models/Enrollment';
 import Student from '../models/Student';
 import Plan from '../models/Plan';
 
+import EnrollmentMail from '../jobs/EnrollmentMail';
+import Queue from '../../lib/Queue';
+
 class EnrollmentController {
   async index(req, res) {
     const { page = 1, quantity = 20 } = req.params;
@@ -76,6 +79,16 @@ class EnrollmentController {
       end_date,
     });
 
+    await enrollment.save();
+
+    await Queue.add(EnrollmentMail.key, {
+      enrollment: {
+        plan,
+        price: Number(enrollment.price),
+        end_date: enrollment.end_date,
+      },
+    });
+
     return res.json(enrollment);
   }
 
@@ -130,6 +143,10 @@ class EnrollmentController {
     });
 
     await enrollment.save();
+
+    await Queue.add(EnrollmentMail.key, {
+      enrollment,
+    });
 
     return res.json(enrollment);
   }
