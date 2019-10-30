@@ -45,6 +45,11 @@ class EnrollmentController {
 
     const { student_id, plan_id, start_date } = req.body;
 
+    const validStudent = await Student.findByPk(student_id);
+
+    if (!validStudent)
+      return res.status(401).json({ error: "This student doesn't exist!" });
+
     const parsedDate = parseISO(start_date);
 
     // date in the past, student already registered
@@ -81,9 +86,10 @@ class EnrollmentController {
 
     await enrollment.save();
 
-    await Queue.add(EnrollmentMail.key, {
+    await Queue.add(EnrollmentMail, {
       enrollment: {
         plan,
+        student_id,
         price: Number(enrollment.price),
         end_date: enrollment.end_date,
       },

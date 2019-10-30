@@ -37,6 +37,7 @@ class AnswerController {
     }
 
     await helpOrder.update({ answer, answer_at: new Date() });
+
     await helpOrder.save();
 
     await Mail.sendMail({
@@ -47,9 +48,6 @@ class AnswerController {
         student: helpOrder.student.name,
         question: helpOrder.question,
         answer: helpOrder.answer,
-        // date: format(parseISO(helpOrder.answer_at), 'dd/MM/yyyy', {
-        //   locale: pt,
-        // }),
       },
     });
 
