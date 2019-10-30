@@ -52,6 +52,12 @@ class EnrollmentController {
       return res.status(400).json({ error: 'Student does not exists' });
     }
 
+    if (await Enrollment.findOne({ where: { student_id: student.id } })) {
+      return res
+        .status(400)
+        .json({ error: 'Already exists a registration with this student' });
+    }
+
     const plan = await Plan.findByPk(plan_id);
 
     // Check if plan exist

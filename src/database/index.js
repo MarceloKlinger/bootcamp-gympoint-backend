@@ -27,14 +27,11 @@ class Database {
   }
 
   mongo() {
-    this.mongoConnection = mongoose.connect(
-      'mongodb://localhost:27017/gympoint',
-      {
-        useUnifiedTopology: true,
-        useNewUrlParser: true,
-        useFindAndModify: true,
-      }
-    );
+    this.mongoConnection = mongoose.connect(process.env.MONGO_URL, {
+      useUnifiedTopology: true,
+      useNewUrlParser: true,
+      useFindAndModify: true,
+    });
   }
 }
 
