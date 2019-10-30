@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { addMonths, parseISO, isBefore } from 'date-fns';
+import { addMonths, parseISO } from 'date-fns';
 
 import Enrollment from '../models/Enrollment';
 import Student from '../models/Student';
@@ -43,54 +43,41 @@ class EnrollmentController {
       return res.status(400).json({ error: 'Validation failed' });
     }
 
-    const { student_id, plan_id, start_date } = req.body;
+    const { start_date, plan_id, student_id } = req.body;
 
-    const validStudent = await Student.findByPk(student_id);
+    // Check if student exist
+    const student = await Student.findByPk(student_id);
 
-    if (!validStudent)
-      return res.status(401).json({ error: "This student doesn't exist!" });
-
-    const parsedDate = parseISO(start_date);
-
-    // date in the past, student already registered
-    if (isBefore(parsedDate, new Date())) {
-      return res.status(400).json({ error: 'You cannot enroll in past dates' });
+    if (!student) {
+      return res.status(400).json({ error: 'Student does not exists' });
     }
 
-    const enrollmentExists = await Enrollment.findOne({
-      where: { student_id },
-    });
-
-    if (enrollmentExists) {
-      return res
-        .status(401)
-        .json({ error: 'A enrollment with this student already exists' });
-    }
-
-    // Calculate price and date
     const plan = await Plan.findByPk(plan_id);
+
+    // Check if plan exist
     if (!plan) {
-      return res.status(404).json({ error: 'Plan not found' });
+      return res.status(400).json({ error: 'Plan does not exists' });
     }
 
-    const { price: priceMonth, duration } = plan;
+    const date = parseISO(start_date);
 
-    const price = priceMonth * duration;
-    const end_date = addMonths(parsedDate, duration);
+    const end_date = addMonths(date, plan.duration);
+
+    console.log(plan.price);
 
     const enrollment = await Enrollment.create({
-      ...req.body,
-      price,
+      start_date: date,
       end_date,
+      price: plan.price,
+      student_id,
+      plan_id,
     });
-
-    await enrollment.save();
 
     await Queue.add(EnrollmentMail, {
       enrollment: {
         plan,
-        student_id,
-        price: Number(enrollment.price),
+        student,
+        price: Number(plan.price),
         end_date: enrollment.end_date,
       },
     });

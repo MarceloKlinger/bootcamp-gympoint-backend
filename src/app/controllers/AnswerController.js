@@ -1,13 +1,9 @@
 import * as Yup from 'yup';
-import { format, parseISO } from 'date-fns';
-import pt from 'date-fns/locale/pt';
 
 import HelpOrder from '../models/HelpOrder';
 import Student from '../models/Student';
 import Queue from '../../lib/Queue';
 import AnswerMail from '../jobs/AnswerMail';
-
-import Mail from '../../lib/Mail';
 
 class AnswerController {
   async store(req, res) {
@@ -40,15 +36,8 @@ class AnswerController {
 
     await helpOrder.save();
 
-    await Mail.sendMail({
-      to: `${helpOrder.student.name} <${helpOrder.student.email}>`,
-      subject: 'Resposta enviada',
-      template: 'answer',
-      context: {
-        student: helpOrder.student.name,
-        question: helpOrder.question,
-        answer: helpOrder.answer,
-      },
+    await Queue.add(AnswerMail, {
+      helpOrder,
     });
 
     return res.json(helpOrder);
